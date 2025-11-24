@@ -4,10 +4,7 @@ import { clerkClient } from "@clerk/express";
 import axios from "axios";
 import { v2 as cloudinary } from 'cloudinary';
 import fs from "fs";
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const pdf = require("pdf-parse");
-
+import pdf from "pdf-parse-fork";
 
 const AI = new OpenAI({
     apiKey: process.env.GEMINI_API_KEY,
@@ -148,7 +145,7 @@ const generateImage = async (req, res) => {
         VALUES (${userId}, ${prompt}, ${secure_url}, 'image', ${publish ?? false})`;
 
 
-        res.json({ success: true, content: secure_url });
+        res.json({ success: true, url: secure_url });
 
 
 
@@ -161,7 +158,7 @@ const generateImage = async (req, res) => {
 const removeImageBackground = async (req, res) => {
     try {
         const { userId } = req.auth();
-        const { image } = req.file;
+        const image = req.file;
         const plan = req.plan; // 'premium' or 'free'
 
         if (plan !== 'premium') {
@@ -195,7 +192,7 @@ const removeImageObject = async (req, res) => {
     try {
         const { userId } = req.auth();
         const { object } = req.body;
-        const { image } = req.file;
+        const image = req.file;
         const plan = req.plan; // 'premium' or 'free'
 
         if (plan !== 'premium') {
@@ -225,9 +222,11 @@ const removeImageObject = async (req, res) => {
 }
 
 const resumeReview = async (req, res) => {
+    // 1. Define the resume object here to make it available in the finally block
+    const resume = req.file;
+
     try {
         const { userId } = req.auth();
-        const resume = req.file;
         const plan = req.plan; // 'premium' or 'free'
 
         if (plan !== 'premium') {
@@ -237,27 +236,32 @@ const resumeReview = async (req, res) => {
             });
         }
 
-        if(resume.size > 5 * 1024 * 1024){
+        if (!resume || resume.size > 5 * 1024 * 1024) {
             return res.json({
                 success: false,
-                message: 'File size exceeds the limit of 5MB.'
+                message: 'File size exceeds the limit of 5MB or no file was uploaded.'
             });
         }
 
-        const dataBuffer  = fs.readFileSync(resume.path);
+        // Read the file buffer
+        // Read the file buffer
+        const dataBuffer = fs.readFileSync(resume.path);
+
+        // Use the standard import 'pdf' function directly
+        // The 'pdf' function is now imported as 'pdf' at the top of the file.
         const pdfData = await pdf(dataBuffer);
-        
+
         const prompt = `Review the following resume and provide constructive feedback on 
-        its strengths, weaknesses and areas for improvement. Resume Content: \n\n ${pdfData.text}`;
+        its strengths, weaknesses and areas for improvement. Provide the output in Markdown format. Resume Content: \n\n ${pdfData.text}`;
 
         const response = await AI.chat.completions.create({
             model: "gemini-2.0-flash",
             messages: [
-                { role: "HR Recruiter", content: "Your an HR Recruiter trying to review resumes and provide constructive feedback." },
-                {role: "user", content: prompt,},
+                { role: "system", content: "You are an HR Recruiter reviewing resumes and providing constructive feedback. Use Markdown for formatting your response." },
+                { role: "user", content: prompt, },
             ],
             temperature: 0.7,
-            max_tokens: length,
+            max_tokens: 2000,
         });
         const content = response.choices[0].message.content;
 
@@ -267,8 +271,13 @@ const resumeReview = async (req, res) => {
         res.json({ success: true, content: content });
 
     } catch (error) {
-        console.log(error.message);
-        res.status(500).json({ success: false, message: 'Failed to generate article' });
+        console.error("Resume Review Error:", error.message);
+        res.status(500).json({ success: false, message: 'Failed to generate review. Check server console for details.' });
+    } finally {
+        // Ensure temporary file cleanup always happens
+        if (resume && resume.path) {
+            fs.unlinkSync(resume.path);
+        }
     }
 }
 

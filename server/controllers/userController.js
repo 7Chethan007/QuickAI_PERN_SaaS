@@ -1,4 +1,4 @@
-import sql from '../configs/db.js';
+import sql from "../configs/db.js";
 
 const getUserCreations = async (req, res) => {
     try {
@@ -55,7 +55,7 @@ const toggleLikeCreations = async (req, res) => {
             message = 'Like added';
         }
 
-        const formatedArray = `{${updatedLikes.json(',')}}`
+        const formatedArray = `{${updatedLikes.join(',')}}`
 
         await sql`UPDATE creations SET likes = ${formatedArray}::text[] WHERE id = ${id}`;
         

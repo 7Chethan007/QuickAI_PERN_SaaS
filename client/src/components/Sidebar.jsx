@@ -34,7 +34,7 @@ const Sidebar = ({ sidebar, setSidebar }) => {
                     {navItems.map(({ to, label, Icon }) => (
                         // FIX 2: Corrected the child function of NavLink. It was returning a fragment with no parent element or explicit return, and 'lable' was misspelled as 'label'.
                         <NavLink key={to} to={to} end={to === '/ai'}
-                        onClick={()=>setSidebar(false)} className={({ isActive }) => `px-3.4 py-2.5 flex 
+                        onClick={()=>setSidebar(false)} className={({ isActive }) => `px-4 py-2.5 flex 
                         items-center gap-3 rounded 
                         ${isActive ? 'bg-gradient-to-r from-[#3C81F6] to-[#9234EA] text-white' : ''}`} >
 

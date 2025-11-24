@@ -1,13 +1,50 @@
 import React, { useState } from 'react'
 import { Sparkles, Scissors } from 'lucide-react'
+import axios from 'axios'
+import toast from 'react-hot-toast';
+import { useAuth } from '@clerk/clerk-react';
+
+axios.defaults.baseURL = import.meta.env.VITE_BASE_URL || 'http://localhost:3000';
 
 const RemoveObjects = () => {
   const [input, setInput] = useState('')
 
   const [objects, setObjects] = useState('')
 
+  const [loading, setLoading] = useState(false)
+  const [content, setContent] = useState('')
+  const { getToken } = useAuth()
+
   const onSubmitHandler = async (e) => {
     e.preventDefault();
+
+    try {
+      setLoading(true);
+
+      if (objects.split(' ').length > 1) {
+        toast.error('Please provide only single object name');
+        setLoading(false);
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('image', input);
+      formData.append('object', objects);
+
+      const { data } = await axios.post('/api/ai/remove-image-object', formData,
+        { headers: { Authorization: `Bearer ${await getToken()}` } }
+      );
+      if (data.success) {
+        setContent(data.content);
+      } else {
+        toast.error(data.message || 'Failed to generate titles');
+      }
+
+      setLoading(false);
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Something went wrong. Please try again.');
+    }
+    setLoading(false);
 
   }
 
@@ -38,11 +75,13 @@ const RemoveObjects = () => {
           placeholder='e.g. person, car, tree, Only single object name' required />
 
 
-        <button className='w-full flex justify-center items-center gap-2
+        <button disabled={loading} className='w-full flex justify-center items-center gap-2
           bg-gradient-to-r from-[#417df6] to-[#8e37eb] text-white px-4 py-2 mt-6
           text-sm rounded-lg cursor-pointer'>
           <Scissors className='w-5' />
-          Remove Objects
+          {
+            loading ? 'Processing...' : 'Remove Objects'
+          }
         </button>
 
       </form>
@@ -56,12 +95,21 @@ const RemoveObjects = () => {
           <h1 className='text-xl font-semibold'>Processed Image</h1>
         </div>
 
-        <div className='flex-1 flex justify-center items-center'>
-          <div className='text-sm flex flex-col items-center gap-5 text-gray-400'>
-            <Scissors className='w-9 h-9' />
-            <p>Upload an image and click "Remove Objects" to get started</p>
-          </div>
-        </div>
+        {
+          !content ? (
+            <div className='flex-1 flex justify-center items-center'>
+              <div className='text-sm flex flex-col items-center gap-5 text-gray-400'>
+                <Scissors className='w-9 h-9' />
+                <p>Upload an image and click "Remove Objects" to get started</p>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <img src={content} alt="Image" className='mt-4 w-full h-full' />
+            </div>
+          )
+        }
+
       </div>
 
     </div>
