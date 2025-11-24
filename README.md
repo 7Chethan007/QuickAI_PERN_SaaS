@@ -15,3 +15,45 @@ Image Generator: Provide prompt to generate images using AI
 Background remover: Upload image and get transparent background image using AI
 Image object remover: upload image and describe the object name to be removed from any image
 Resume Analyzer: Upload resume and get complete analysis of your resume using AI
+
+
+
+## Vercel configuration
+
+Vercel json config for the Express backend:
+
+```json
+{
+    "version": 2,
+    "builds": [
+        {
+            "src": "server.js",
+            "use": "@vercel/node",
+            "config": {
+                "includeFiles": [
+                    "dist/**"
+                ]
+            }
+        }
+    ],
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "server.js"
+        }
+    ]
+}
+```
+
+Vercel json config to support React Router in the frontend:
+
+```json
+{
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/"
+        }
+    ]
+}
+```
