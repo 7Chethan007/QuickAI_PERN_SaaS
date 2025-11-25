@@ -57,3 +57,28 @@ Vercel json config to support React Router in the frontend:
     ]
 }
 ```
+
+
+
+
+
+
+
+
+
+
+Server
+
+docker build -t chethan0907/quick-ai-server .
+docker run -p 3000:3000 --env-file ./.env chethan0907/quick-ai-server
+
+
+Clinet
+
+docker build --no-cache -t chethan0907/quick-ai .
+
+docker run -p 8080:80 chethan0907/quick-ai
+
+Run both at once
+
+docker-compose up --build
