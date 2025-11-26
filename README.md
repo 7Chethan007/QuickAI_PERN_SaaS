@@ -121,6 +121,49 @@ docker-compose down
 
 You can also build and run each service as a standalone container. See the `README.md` files in the `client/` and `server/` directories for detailed instructions.
 
+## Vercel Deployment
+
+While this project is optimized for Docker, it can also be deployed to Vercel. You will need to create a Vercel project for both the `client` and `server` directories and configure them correctly.
+
+### 1. Frontend (`client`)
+
+In your Vercel project settings for the frontend, set the **Root Directory** to `client`. Then, create a `vercel.json` file inside the `client` directory with the following content. This ensures that all routing is handled by React Router.
+
+**`client/vercel.json`**
+```json
+{
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
+  ]
+}
+```
+
+### 2. Backend (`server`)
+
+In your Vercel project settings for the backend, set the **Root Directory** to `server`. Then, create a `vercel.json` file inside the `server` directory with the following content. This tells Vercel how to build and route the Express API.
+
+**`server/vercel.json`**
+```json
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "index.js"
+    }
+  ]
+}
+```
+
 ## Docker Hub Images
 
 Pre-built images for both the frontend and backend are available on Docker Hub.
